@@ -62,14 +62,14 @@ if [ -z "$(ls -A /var/lib/mysql/ 2> /dev/null)" ]; then
     SOCKET="/run/mysqld/mysqld.sock"
     MYSQL_CMD="mysql"
 
+    MYSQLD_OUTPUT=/tmp/mysqldoutput
     # Start a mysqld we will use to pass init stuff to. Can't use the same options
     # as a standard instance; pass them manually.
-    mysqld --user=mysql --silent-startup --skip-networking --socket=${SOCKET} > /dev/null 2>&1 &
+    mysqld --user=mysql --skip-networking --socket=${SOCKET} > "${MYSQLD_OUTPUT}" 2>&1 &
+    PID="$!"
 
     # wait for mysqld to accept connections
-    while ! mysqladmin ping --silent > /dev/null; do
-      sleep 0.1
-    done
+    ( tail -f "${MYSQLD_OUTPUT}" & ) | grep -q "mysqld: ready for connections"
 
     # Run the init script
     echo "init: updating system tables"
@@ -87,8 +87,13 @@ if [ -z "$(ls -A /var/lib/mysql/ 2> /dev/null)" ]; then
       esac
     done
 
+    # shutdown temporary mysqld
+    kill -s TERM "${PID}"
+    # wait for mysqld to be shutdown
+    ( tail -f "${MYSQLD_OUTPUT}" & ) | grep -q "mysqld: Shutdown complete"
+
     # Clean up
-    mysqladmin shutdown
+    rm -f "${MYSQLD_OUTPUT}"
     echo "init: removing mysql client"
     apk del -q --no-cache mariadb-client
   else
