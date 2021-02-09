@@ -65,7 +65,6 @@ if [ -z "$(ls -A /var/lib/mysql/ 2> /dev/null)" ]; then
     # Start a mysqld we will use to pass init stuff to. Can't use the same options
     # as a standard instance; pass them manually.
     mysqld --user=mysql --silent-startup --skip-networking --socket=${SOCKET} > /dev/null 2>&1 &
-    PID="$!"
 
     # wait for mysqld to accept connections
     while ! mysqladmin ping --silent > /dev/null; do
@@ -89,7 +88,7 @@ if [ -z "$(ls -A /var/lib/mysql/ 2> /dev/null)" ]; then
     done
 
     # Clean up
-    kill -s TERM "${PID}"
+    mysqladmin shutdown
     echo "init: removing mysql client"
     apk del -q --no-cache mariadb-client
   else
