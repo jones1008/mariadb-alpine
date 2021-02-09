@@ -105,4 +105,8 @@ fi
 # https://github.com/jbergstroem/mariadb-alpine/issues/54
 chown -R mysql:mysql /var/lib/mysql
 
+# explicitly set skip-networking to FALSE due to some problems in mariadb version lower than 10.4.17
+# https://github.com/jbergstroem/mariadb-alpine/issues/62
+MYSQLD_OPTS="${MYSQLD_OPTS} --skip-networking=FALSE"
+
 eval exec /usr/bin/mysqld "${MYSQLD_OPTS}"
