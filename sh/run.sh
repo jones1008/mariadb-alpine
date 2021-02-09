@@ -67,8 +67,10 @@ if [ -z "$(ls -A /var/lib/mysql/ 2> /dev/null)" ]; then
     mysqld --user=mysql --silent-startup --skip-networking --socket=${SOCKET} > /dev/null 2>&1 &
     PID="$!"
 
-    # perhaps trap this to avoid issues on slow systems?
-    sleep 1
+    # wait for mysqld to accept connections
+    while ! mysqladmin ping --silent > /dev/null; do
+      sleep 0.1
+    done
 
     # Run the init script
     echo "init: updating system tables"
